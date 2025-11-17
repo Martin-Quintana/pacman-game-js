@@ -1,4 +1,12 @@
-import { map, drawMap, TILE_SIZE, COLS, ROWS } from "./map.js";
+import {
+  map,
+  drawMap,
+  TILE_SIZE,
+  COLS,
+  ROWS,
+  pacmanStart,
+  ghostStartPositions,
+} from "./map.js";
 import Pacman from "./pacman.js";
 import Ghost from "./ghost.js";
 import { getDirection } from "./input.js";
@@ -12,27 +20,29 @@ canvas.height = ROWS * TILE_SIZE;
 const scoreEl = document.getElementById("score");
 const livesEl = document.getElementById("lives");
 
-// Posiciones iniciales
-const pacmanStart = {
-  col: Math.floor(COLS / 2),
-  row: ROWS - 3,
-};
-
-const ghostStart = {
-  col: Math.floor(COLS / 2),
-  row: 3,
-};
-
+// Instancias
 const pacman = new Pacman(pacmanStart.col, pacmanStart.row);
-const ghosts = [new Ghost(ghostStart.col, ghostStart.row, "red")];
+
+// 4 fantasmas como el original: rojo, rosa, cian, naranja
+const ghostColors = ["red", "pink", "cyan", "orange"];
+const ghosts = ghostStartPositions.map(
+  (pos, index) => new Ghost(pos.col, pos.row, ghostColors[index] || "red")
+);
 
 let score = 0;
 let lives = 3;
 let gameOver = false;
 
+// Tiempo que dura el modo asustado (en frames aprox. 60 fps)
+const FRIGHTENED_FRAMES = 60 * 7; // ~7 segundos
+let frightenedTimer = 0;
+
 function resetPositions() {
   pacman.reset(pacmanStart.col, pacmanStart.row);
-  ghosts.forEach((g) => g.reset(ghostStart.col, ghostStart.row));
+  ghosts.forEach((g, index) => {
+    const pos = ghostStartPositions[index];
+    g.reset(pos.col, pos.row);
+  });
 }
 
 function updateUI() {
@@ -51,19 +61,42 @@ function update() {
     updateUI();
   }
 
+  // Si ha comido un orbe de poder, activamos modo asustado
+  if (pacman.atePower) {
+    frightenedTimer = FRIGHTENED_FRAMES;
+    ghosts.forEach((g) => g.setFrightened(true));
+  }
+
+  // Actualizamos el temporizador del modo asustado
+  if (frightenedTimer > 0) {
+    frightenedTimer--;
+    if (frightenedTimer === 0) {
+      ghosts.forEach((g) => g.setFrightened(false));
+    }
+  }
+
+  // Actualizar fantasmas
   ghosts.forEach((g) => g.update(map));
 
-  // Colisión Pac-Man – fantasma
+  // Colisiones Pac-Man – fantasmas
   ghosts.forEach((g) => {
     if (pacman.collidesWith(g)) {
-      lives--;
-      updateUI();
+      if (g.isFrightened) {
+        // Pac-Man se come al fantasma
+        score += 200; // puedes subirlo o hacer combo
+        g.eaten();
+        updateUI();
+      } else {
+        // Fantasma mata a Pac-Man
+        lives--;
+        updateUI();
 
-      if (lives <= 0) {
-        gameOver = true;
+        if (lives <= 0) {
+          gameOver = true;
+        }
+
+        resetPositions();
       }
-
-      resetPositions();
     }
   });
 }
