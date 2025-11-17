@@ -13,11 +13,14 @@ function getRandomDirection() {
 
 export default class Ghost {
   constructor(col, row, color = "red") {
-    this.color = color;
-    this.speed = 1.5;
+    this.baseSpeed = 1.5;
+    this.speed = this.baseSpeed;
     this.radius = TILE_SIZE / 2 - 2;
+    this.color = color;
     this.startCol = col;
     this.startRow = row;
+
+    this.isFrightened = false;
 
     this.reset(col, row);
   }
@@ -26,6 +29,18 @@ export default class Ghost {
     this.x = col * TILE_SIZE + TILE_SIZE / 2;
     this.y = row * TILE_SIZE + TILE_SIZE / 2;
     this.dir = getRandomDirection();
+  }
+
+  setFrightened(active) {
+    this.isFrightened = active;
+    this.speed = active ? this.baseSpeed * 0.6 : this.baseSpeed;
+  }
+
+  eaten() {
+    // Cuando Pac-Man se lo come, vuelve a la casa
+    this.isFrightened = false;
+    this.speed = this.baseSpeed;
+    this.reset();
   }
 
   update(map) {
@@ -57,8 +72,11 @@ export default class Ghost {
   }
 
   draw(ctx) {
+    // Color: azul si está asustado
+    const bodyColor = this.isFrightened ? "#0000ff" : this.color;
+
     // Cuerpo del fantasma
-    ctx.fillStyle = this.color;
+    ctx.fillStyle = bodyColor;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, Math.PI, 0, false);
     ctx.lineTo(this.x + this.radius, this.y + this.radius);
