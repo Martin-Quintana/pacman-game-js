@@ -5,6 +5,7 @@ export default class Pacman {
     this.speed = 2; // píxeles por frame
     this.radius = TILE_SIZE / 2 - 2;
     this.currentDir = { x: 0, y: 0 };
+    this.atePower = false; // se pondrá a true si come un orbe de poder
 
     this.reset(col, row);
   }
@@ -13,13 +14,17 @@ export default class Pacman {
     this.x = col * TILE_SIZE + TILE_SIZE / 2;
     this.y = row * TILE_SIZE + TILE_SIZE / 2;
     this.currentDir = { x: 0, y: 0 };
+    this.atePower = false;
   }
 
   /**
    * Actualiza la posición de Pac-Man según la dirección de input.
    * Devuelve los puntos obtenidos en este frame.
+   * Además, si come un orbe de poder, this.atePower = true.
    */
   update(map, inputDir) {
+    this.atePower = false;
+
     // Intentamos cambiar de dirección según el input
     if (
       inputDir &&
@@ -39,7 +44,7 @@ export default class Pacman {
     this.x += this.currentDir.x * this.speed;
     this.y += this.currentDir.y * this.speed;
 
-    // Comer puntos
+    // Comer puntos / orbes
     const col = Math.floor(this.x / TILE_SIZE);
     const row = Math.floor(this.y / TILE_SIZE);
 
@@ -49,9 +54,14 @@ export default class Pacman {
 
     let points = 0;
     const tile = map[row][col];
+
     if (tile === TILE.DOT) {
       map[row][col] = TILE.EMPTY;
       points = 10;
+    } else if (tile === TILE.POWER) {
+      map[row][col] = TILE.EMPTY;
+      points = 50;
+      this.atePower = true;
     }
 
     return points;
