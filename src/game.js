@@ -37,6 +37,9 @@ let gameOver = false;
 const FRIGHTENED_FRAMES = 60 * 7; // ~7 segundos
 let frightenedTimer = 0;
 
+let globalMode = "SCATTER"; // "SCATTER" | "CHASE"
+let modeTimer = 0;
+
 function resetPositions() {
   pacman.reset(pacmanStart.col, pacmanStart.row);
   ghosts.forEach((g, index) => {
@@ -53,7 +56,40 @@ function updateUI() {
 function update() {
   if (gameOver) return;
 
+  // Actualizar modo global (Scatter / Chase)
+  // Ciclo simple para Nivel 1: 7s Scatter, 20s Chase, repetir.
+  // Frightened anula esto temporalmente.
+
+  if (frightenedTimer > 0) {
+    frightenedTimer--;
+    if (frightenedTimer === 0) {
+      ghosts.forEach((g) => g.setFrightened(false));
+      // Reanudar música normal si la hubiera
+    }
+  } else {
+    // Lógica de oleadas Scatter/Chase
+    modeTimer++;
+    // Ejemplo simplificado de onda: 7 seg Scatter -> 20 seg Chase -> Repetir
+    // 60 frames * 7 = 420
+    // 60 frames * 20 = 1200
+    // Total ciclo = 1620
+    const currentFrame = modeTimer % 1620;
+
+    let newMode = "CHASE";
+    if (currentFrame < 420) {
+      newMode = "SCATTER";
+    }
+
+    if (globalMode !== newMode) {
+      globalMode = newMode;
+      // Invertir dirección de fantasmas al cambiar de modo (regla original)
+      ghosts.forEach(g => g.reverseDirection());
+      console.log("Mode switch:", globalMode);
+    }
+  }
+
   const dir = getDirection();
+  // Pacman update devuelve puntos
   const gained = pacman.update(map, dir);
 
   if (gained > 0) {
@@ -61,41 +97,37 @@ function update() {
     updateUI();
   }
 
-  // Si ha comido un orbe de poder, activamos modo asustado
+  // Si ha comido un orbe de poder
   if (pacman.atePower) {
     frightenedTimer = FRIGHTENED_FRAMES;
     ghosts.forEach((g) => g.setFrightened(true));
   }
 
-  // Actualizamos el temporizador del modo asustado
-  if (frightenedTimer > 0) {
-    frightenedTimer--;
-    if (frightenedTimer === 0) {
-      ghosts.forEach((g) => g.setFrightened(false));
-    }
-  }
+  // Actualizar fantasmas con el modo actual (si están asustados, el fantasma ya lo sabe por su flag, pero le pasamos el global por si acaso)
+  // Pasamos 'pacman' para que puedan usar su posición en la IA
+  // Pasamos 'ghosts' (lista completa) para Inky, que necesita a Blinky
+  ghosts.forEach((g) => g.update(map, pacman, ghosts, globalMode));
 
-  // Actualizar fantasmas
-  ghosts.forEach((g) => g.update(map));
-
-  // Colisiones Pac-Man – fantasmas
+  // Colisiones
   ghosts.forEach((g) => {
     if (pacman.collidesWith(g)) {
       if (g.isFrightened) {
-        // Pac-Man se come al fantasma
-        score += 200; // puedes subirlo o hacer combo
-        g.eaten();
-        updateUI();
-      } else {
-        // Fantasma mata a Pac-Man
-        lives--;
-        updateUI();
-
-        if (lives <= 0) {
-          gameOver = true;
+        if (!g.isEaten) { // Si ya fue comido (ojos), no hace nada
+          score += 200;
+          g.markAsEaten();
+          updateUI();
         }
-
-        resetPositions();
+      } else {
+        // Muerte
+        if (!g.isEaten) { // Si son solo ojos, no matan
+          lives--;
+          updateUI();
+          if (lives <= 0) {
+            gameOver = true;
+          } else {
+            resetPositions();
+          }
+        }
       }
     }
   });

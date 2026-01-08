@@ -22,7 +22,7 @@ const LEVEL = [
   "######.##### ## #####.######",
   "######.##### ## #####.######",
   "######.##          ##.######",
-  "######.## ######## ##.######",
+  "######.## ###  ### ##.######",
   "######.## #1 2 34# ##.######",
   "======.   #      #   .======",
   "######.## ###  ### ##.######",
@@ -58,22 +58,22 @@ for (let row = 0; row < ROWS; row++) {
     let tile;
 
     switch (ch) {
-        case "#": tile = TILE.WALL; break;
-        case ".": tile = TILE.DOT; break;
-        case "o": tile = TILE.POWER; break;
-        case "P": pacmanStart = { col, row }; tile = TILE.DOT; break;
-        case "1":
-        case "2":
-        case "3":
-        case "4":
-            ghostStartPositions.push({ col, row });
-            tile = TILE.EMPTY;
-            break;
-        case "=": 
-            tile = TILE.EMPTY; // puerta jaula
-            break;
-        default:
-    tile = TILE.EMPTY; break;
+      case "#": tile = TILE.WALL; break;
+      case ".": tile = TILE.DOT; break;
+      case "o": tile = TILE.POWER; break;
+      case "P": pacmanStart = { col, row }; tile = TILE.DOT; break;
+      case "1":
+      case "2":
+      case "3":
+      case "4":
+        ghostStartPositions.push({ col, row });
+        tile = TILE.EMPTY;
+        break;
+      case "=":
+        tile = TILE.EMPTY; // puerta jaula
+        break;
+      default:
+        tile = TILE.EMPTY; break;
     }
 
     rowData.push(tile);
