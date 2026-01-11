@@ -50,3 +50,13 @@ window.addEventListener("keydown", handleKeyDown);
 export function getDirection() {
   return currentDirection;
 }
+
+export function setDirection(dir) {
+  if (dir.x === 0 && dir.y === 0) {
+    currentDirection = Direction.NONE;
+  } else {
+    // Find matching direction if needed, but for reset we mostly need NONE
+    // Or if we want to programmatically set it
+    currentDirection = dir;
+  }
+}

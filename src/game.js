@@ -6,10 +6,12 @@ import {
   ROWS,
   pacmanStart,
   ghostStartPositions,
+  resetMap,
 } from "./map.js";
 import Pacman from "./pacman.js";
 import Ghost from "./ghost.js";
-import { getDirection } from "./input.js";
+import { getDirection, setDirection } from "./input.js";
+import { sounds } from "./sounds.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -19,6 +21,17 @@ canvas.height = ROWS * TILE_SIZE;
 
 const scoreEl = document.getElementById("score");
 const livesEl = document.getElementById("lives");
+const startOverlay = document.getElementById("start-overlay");
+const startBtn = document.getElementById("start-btn");
+const muteBtn = document.getElementById("mute-btn");
+
+// UI Events
+startBtn.addEventListener("click", startGame);
+muteBtn.addEventListener("click", () => {
+  const isMuted = sounds.toggleMute();
+  muteBtn.textContent = isMuted ? "🔇 SOUND OFF" : "🔊 SOUND ON";
+  muteBtn.style.color = isMuted ? "#f00" : "#888";
+});
 
 // Instancias
 const pacman = new Pacman(pacmanStart.col, pacmanStart.row);
@@ -32,6 +45,7 @@ const ghosts = ghostStartPositions.map(
 let score = 0;
 let lives = 3;
 let gameOver = false;
+let gameRunning = false; // Estado de espera inicial
 
 // Tiempo que dura el modo asustado (en frames aprox. 60 fps)
 const FRIGHTENED_FRAMES = 60 * 7; // ~7 segundos
@@ -46,33 +60,51 @@ function resetPositions() {
     const pos = ghostStartPositions[index];
     g.reset(pos.col, pos.row);
   });
+
+  // Reset direction input too
+  setDirection({ x: 0, y: 0 });
+}
+
+function startGame() {
+  if (gameRunning) return;
+
+  // Audio Context requirement
+  sounds.init();
+  sounds.resume();
+  sounds.startSiren();
+
+  startOverlay.style.display = 'none';
+  gameRunning = true;
+  gameOver = false;
+  score = 0;
+  lives = 3;
+  resetMap(); // Reset dots and power pellets!
+  resetPositions();
+  updateUI();
+
+  // Restart loop if needed, though we keep it running to draw
 }
 
 function updateUI() {
-  scoreEl.textContent = `Score: ${score}`;
-  livesEl.textContent = `Lives: ${lives}`;
+  scoreEl.textContent = `${score}`;
+  livesEl.textContent = `${lives}`;
 }
 
 function update() {
-  if (gameOver) return;
+  if (!gameRunning || gameOver) return;
 
   // Actualizar modo global (Scatter / Chase)
-  // Ciclo simple para Nivel 1: 7s Scatter, 20s Chase, repetir.
-  // Frightened anula esto temporalmente.
-
   if (frightenedTimer > 0) {
     frightenedTimer--;
     if (frightenedTimer === 0) {
       ghosts.forEach((g) => g.setFrightened(false));
-      // Reanudar música normal si la hubiera
+      sounds.startSiren(); // Back to normal siren
+    } else {
+      // Here we could have a "frightened siren"
     }
   } else {
     // Lógica de oleadas Scatter/Chase
     modeTimer++;
-    // Ejemplo simplificado de onda: 7 seg Scatter -> 20 seg Chase -> Repetir
-    // 60 frames * 7 = 420
-    // 60 frames * 20 = 1200
-    // Total ciclo = 1620
     const currentFrame = modeTimer % 1620;
 
     let newMode = "CHASE";
@@ -82,50 +114,69 @@ function update() {
 
     if (globalMode !== newMode) {
       globalMode = newMode;
-      // Invertir dirección de fantasmas al cambiar de modo (regla original)
       ghosts.forEach(g => g.reverseDirection());
-      console.log("Mode switch:", globalMode);
     }
   }
 
   const dir = getDirection();
-  // Pacman update devuelve puntos
+
+  // Guardamos posición anterior para saber si se movió
+  const prevX = pacman.x;
+  const prevY = pacman.y;
+
   const gained = pacman.update(map, dir);
+
+  // Sound: Waka if moving
+  if (pacman.x !== prevX || pacman.y !== prevY) {
+    if (modeTimer % 15 === 0) { // No need to play every frame
+      sounds.playWaka();
+    }
+  }
 
   if (gained > 0) {
     score += gained;
     updateUI();
+    // Maybe a tiny sound for pellet? Waka covers it usually.
   }
 
   // Si ha comido un orbe de poder
   if (pacman.atePower) {
     frightenedTimer = FRIGHTENED_FRAMES;
     ghosts.forEach((g) => g.setFrightened(true));
+    sounds.stopSiren();
+    // Maybe play a power pellet loop? For now silence the siren or keep it
   }
 
-  // Actualizar fantasmas con el modo actual (si están asustados, el fantasma ya lo sabe por su flag, pero le pasamos el global por si acaso)
-  // Pasamos 'pacman' para que puedan usar su posición en la IA
-  // Pasamos 'ghosts' (lista completa) para Inky, que necesita a Blinky
+  // Actualizar fantasmas
   ghosts.forEach((g) => g.update(map, pacman, ghosts, globalMode));
 
   // Colisiones
   ghosts.forEach((g) => {
     if (pacman.collidesWith(g)) {
       if (g.isFrightened) {
-        if (!g.isEaten) { // Si ya fue comido (ojos), no hace nada
+        if (!g.isEaten) {
           score += 200;
           g.markAsEaten();
           updateUI();
+          sounds.playEatGhost();
         }
       } else {
         // Muerte
-        if (!g.isEaten) { // Si son solo ojos, no matan
+        if (!g.isEaten) {
           lives--;
           updateUI();
+          sounds.playDeath();
+
           if (lives <= 0) {
             gameOver = true;
+            gameRunning = false;
+            sounds.stopSiren();
+            startOverlay.style.display = 'flex';
+            startOverlay.querySelector('p').textContent = "GAME OVER";
+            startOverlay.querySelector('button').textContent = "TRY AGAIN";
           } else {
             resetPositions();
+            // Pause briefly?
           }
         }
       }
@@ -140,15 +191,7 @@ function draw() {
   ghosts.forEach((g) => g.draw(ctx));
   pacman.draw(ctx);
 
-  if (gameOver) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(0, canvas.height / 2 - 40, canvas.width, 80);
-
-    ctx.fillStyle = "#fff";
-    ctx.font = "24px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-  }
+  // Remove old Game Over draw since it is handled by overlay now
 }
 
 function gameLoop() {
@@ -157,6 +200,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// Inicio
+// Initial Draw
+draw();
 updateUI();
 requestAnimationFrame(gameLoop);

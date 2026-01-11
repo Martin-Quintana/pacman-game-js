@@ -22,7 +22,7 @@ const LEVEL = [
   "######.##### ## #####.######",
   "######.##### ## #####.######",
   "######.##          ##.######",
-  "######.## ###  ### ##.######",
+  "######.## ######## ##.######",
   "######.## #1 2 34# ##.######",
   "======.   #      #   .======",
   "######.## ###  ### ##.######",
@@ -51,35 +51,45 @@ export const map = [];
 export let pacmanStart = { col: 0, row: 0 };
 export const ghostStartPositions = []; // {col, row}
 
-for (let row = 0; row < ROWS; row++) {
-  const rowData = [];
-  for (let col = 0; col < COLS; col++) {
-    const ch = LEVEL[row][col];
-    let tile;
+export function resetMap() {
+  // Clear existing map rows if any (to keep the reference but update content, 
+  // or we can just empty it and push new rows if 'map' is const array but mutable)
+  map.length = 0;
+  ghostStartPositions.length = 0;
 
-    switch (ch) {
-      case "#": tile = TILE.WALL; break;
-      case ".": tile = TILE.DOT; break;
-      case "o": tile = TILE.POWER; break;
-      case "P": pacmanStart = { col, row }; tile = TILE.DOT; break;
-      case "1":
-      case "2":
-      case "3":
-      case "4":
-        ghostStartPositions.push({ col, row });
-        tile = TILE.EMPTY;
-        break;
-      case "=":
-        tile = TILE.EMPTY; // puerta jaula
-        break;
-      default:
-        tile = TILE.EMPTY; break;
+  for (let row = 0; row < ROWS; row++) {
+    const rowData = [];
+    for (let col = 0; col < COLS; col++) {
+      const ch = LEVEL[row][col];
+      let tile;
+
+      switch (ch) {
+        case "#": tile = TILE.WALL; break;
+        case ".": tile = TILE.DOT; break;
+        case "o": tile = TILE.POWER; break;
+        case "P": pacmanStart = { col, row }; tile = TILE.DOT; break;
+        case "1":
+        case "2":
+        case "3":
+        case "4":
+          ghostStartPositions.push({ col, row });
+          tile = TILE.EMPTY;
+          break;
+        case "=":
+          tile = TILE.EMPTY; // puerta jaula
+          break;
+        default:
+          tile = TILE.EMPTY; break;
+      }
+
+      rowData.push(tile);
     }
-
-    rowData.push(tile);
+    map.push(rowData);
   }
-  map.push(rowData);
 }
+
+// Initial load
+resetMap();
 
 /**
  * Dibuja el mapa en el canvas.

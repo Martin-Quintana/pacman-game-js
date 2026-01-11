@@ -3,19 +3,33 @@
 <head>
   <meta charset="UTF-8" />
   <title>Pacman Game JS</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Pacman Game JS</h1>
+  <h1>PAC-MAN</h1>
 
-  <div id="hud">
-    <span id="score">Score: 0</span>
-    <span id="lives">Lives: 3</span>
+  <div id="game-container">
+    <div id="hud">
+      <div id="score-box">SCORE <span id="score">0</span></div>
+      <div id="lives-box">LIVES <span id="lives">3</span></div>
+    </div>
+
+    <div id="canvas-wrapper">
+      <canvas id="gameCanvas"></canvas>
+      <div id="start-overlay">
+        <p>PRESS START</p>
+        <button id="start-btn">INSERT COIN (START)</button>
+      </div>
+    </div>
+    
+    <div id="controls-hint">
+        <p>W A S D / ARROWS to Move</p>
+        <button id="mute-btn">🔊 SOUND ON</button>
+    </div>
   </div>
-
-  <canvas id="gameCanvas"></canvas>
-
-  <p class="hint">Usa las flechas o WASD para mover a Pac-Man.</p>
 
   <script type="module" src="src/game.js"></script>
 </body>
