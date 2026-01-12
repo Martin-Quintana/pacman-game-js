@@ -1,12 +1,13 @@
-# 🟡 Pac-Man Game JS  
-Recreación completa del clásico **Pac-Man (1980)** desarrollada en **JavaScript**, **HTML5 Canvas** y **CSS**, con el mapa original, los 4 fantasmas clásicos, puntos, orbes de poder y sistema de vidas, todo implementado desde cero.
+## 🟡 Pac-Man Game JS  
+Recreación completa del clásico **Pac-Man (1980)** desarrollada en **JavaScript**, **HTML5 Canvas** y **CSS**, con el mapa original, los 4 fantasmas clásicos con sus personalidades únicas, efectos de sonido, puntos, orbes de poder y sistema de vidas.
 
 Este proyecto está hecho para aprender y demostrar:
 - Programación de videojuegos 2D
 - Movimiento en tilemaps
 - Detección de colisiones
-- IA básica de enemigos
+- **IA de enemigos compleja (Scatter/Chase y personalidades)**
 - Organización de proyecto en módulos ES6
+- **Empaquetado de aplicaciones web a escritorio (.exe)**
 
 ## 🧩 Características principales
 
@@ -26,16 +27,25 @@ Incluye todos los elementos del laberinto oficial:
 - Come puntos y orbes  
 - Cambia el estado de los fantasmas al comer un orbe  
 
-### ✔️ 4 fantasmas clásicos
-- **Blinky (Rojo)**  
-- **Pinky (Rosa)**  
-- **Inky (Cian)**  
-- **Clyde (Naranja)**  
+### ✔️ 4 fantasmas clásicos con IA Avanzada
+Cada fantasma tiene su propia personalidad y alterna entre modos **Scatter** (dispersión) y **Chase** (persecución):
+
+- **Blinky (Rojo)**: 'Shadow'. Persigue directamente a Pac-Man.
+- **Pinky (Rosa)**: 'Speedy'. Intenta emboscar a Pac-Man situándose 4 casillas por delante.
+- **Inky (Cian)**: 'Bashful'. Su objetivo depende de la posición de Blinky y Pac-Man, creando movimientos impredecibles.
+- **Clyde (Naranja)**: 'Pokey'. Persigue a Pac-Man pero huye a su esquina si se acerca demasiado.
 
 Con:
-- Movimiento autónomo  
-- Estados: normal, asustado, comido  
-- Velocidad reducida cuando están asustados  
+- Algoritmo de búsqueda de rutas (Pathfinding)
+- Modos globales: Scatter (van a sus esquinas) y Chase (atacan)
+- Estados: normal, asustado (huyen aleatoriamente), comido (ojos vuelven a casa)
+- Velocidad dinámica
+
+### ✔️ Audio y Efectos
+- Sonido "Waka Waka" al moverse
+- Sirena de fondo
+- Efectos de muerte y comer fantasmas
+- Botón de Mute disponible
 
 ### ✔️ Power-Ups
 Los 4 orbes grandes permiten:
@@ -52,36 +62,44 @@ Los 4 orbes grandes permiten:
 - **JavaScript (ES Modules)**
 - **HTML5 Canvas API**
 - **CSS3**
-- **Python HTTP Server**
+- **Python** (para servidor local y launcher)
+- **PyInstaller** (para el ejecutable)
 
 ## 📂 Estructura del proyecto
 
 ```
 pacman-game-js/
 ├─ src/
-│  ├─ game.js
-│  ├─ map.js
-│  ├─ pacman.js
-│  ├─ ghost.js
-│  └─ input.js
+│  ├─ game.js       # Bucle principal y lógica de juego
+│  ├─ map.js        # Definición del laberinto
+│  ├─ pacman.js     # Lógica del jugador
+│  ├─ ghost.js      # IA y estados de los fantasmas
+│  ├─ sounds.js     # Gestor de audio
+│  └─ input.js      # Manejo de teclado
+├─ assets/          # Archivos de sonido
 ├─ index.html
 ├─ styles.css
+├─ Pacman.exe       # Ejecutable para Windows
 └─ README.md
 ```
 
 ## ▶️ Cómo ejecutar el juego
 
-### Opción 1 — Con Python (recomendado)
+### Opción 1 — Ejecutable de Windows (Fácil)
+Simplemente haz doble clic en el archivo:
+```
+Pacman.exe
+```
+¡No requiere instalar nada!
+
+### Opción 2 — Con Python (Dev)
 ```bash
 cd pacman-game-js
 python -m http.server 8000
 ```
-Luego abre:
-```
-http://localhost:8000
-```
+Luego abre: `http://localhost:8000`
 
-### Opción 2 — Script de lanzamiento
+### Opción 3 — Script de lanzamiento
 ```
 start-pacman.bat
 ```
@@ -94,18 +112,20 @@ start-pacman.bat
 | Mover abajo | S / ↓ |
 | Mover izquierda | A / ← |
 | Mover derecha | D / → |
+| Silenciar Audio | Clic en botón de sonido |
 
 ## 🗺️ Mapa original
 Incluye el laberinto clásico de Pac-Man (28x31), con túneles laterales, jaula central y distribución exacta de puntos.
 
 ## 📅 Roadmap
 
-- [ ] IA avanzada  
-- [ ] Animación de Pac-Man  
+- [x] IA avanzada (Personalidades y Modos)
+- [x] Animación de Pac-Man  
 - [ ] Bonus fruit  
-- [ ] Sonidos  
+- [x] Sonidos  
 - [ ] Highscores  
 - [ ] Niveles múltiples  
+- [x] Ejecutable de escritorio
 
 ## 🤝 Contribuciones
 Abre un Issue o Pull Request para mejorar el proyecto.
